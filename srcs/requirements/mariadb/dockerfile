@@ -2,6 +2,14 @@ FROM alpine:3.21
 
 RUN apk update && apk add --no-cache \
     mariadb \
-    mariadb-client
+    mariadb-client \
+    && mkdir -p /var/lib/mysql /run/mysqld \
+    && chown -R mysql:mysql /var/lib/mysql /run/mysqld
 
 EXPOSE 3306
+
+USER mysql
+
+COPY --chmod=755 tools/docker-entrypoint.sh /docker-entrypoint.sh
+ENTRYPOINT ["/docker-entrypoint.sh"]
+

@@ -1,1 +1,76 @@
 version: '3.8'
+
+services:
+  mariadb:
+    image: mariadb_42:latest
+    build: ./requirements/mariadb
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - network_42
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/mysql_root_password
+      - MYSQL_PASSWORD_FILE=/run/secrets/mysql_password
+    secrets:
+      - mysql_root_password
+      - mysql_password
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  wordpress:
+    image: wordpress_42:latest
+    build: ./requirements/wordpress
+    volumes:
+      - wordpress_data:/var/www/html
+    networks: 
+      - network_42
+    depends_on:
+      - mariadb
+    environment:
+      - WORDPRESS_DB_HOST=mariadb
+      - WORDPRESS_DB_NAME=${MYSQL_DATABASE}
+      - WORDPRESS_DB_USER=${MYSQL_USER}
+    secrets:
+      - mysql_password
+      - wordpress_admin_password
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+  nginx:
+    image: nginx_42:latest
+    build: ./requirements/nginx
+    ports:
+      - "443:443"
+    volumes:
+      - wordpress_data:/var/www/html
+    networks:
+      - network_42
+    depends_on:
+      - wordpress
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+volumes:
+  mariadb_data:
+    driver: local
+  wordpress_data:
+    driver: local
+networks:
+  network_42:
+    driver: overlay # 다중 호스트 지원
+
+secrets:
+  mysql_root_password:
+    file: ./secrets/db_root_password.txt
+  mysql_password:
+    file: ./secrets/db_password.txt
+  wordpress_admin_password:
+    file: ./secrets/wp_admin_password.txt
