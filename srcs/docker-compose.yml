@@ -1,0 +1,51 @@
+version: "3.5"
+
+volumes:
+  db_data:
+    name: mariadb
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./srcs/requirements/mariadb/
+  
+  wp_data:
+    name: wordpress
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./srcs/requirements/wordpress/
+
+
+networks:
+  inception:
+    driver: bridge
+
+
+secrets:
+  db_root_password:
+    file: ./secrets/mariadb/secrets/db_root_password.txt
+  db_password:
+    file: ./secrets/mariadb/secrets/db_password.txt
+  db_user:
+    file: ./secrets/mariadb/secrets/db_user.txt
+  db_name:
+    file: ./secrets/db_name.txt
+
+
+services:
+  mariadb:
+    container_name: mariadb
+    image: mariadb:latest
+    build: ./srcs/requirements/mariadb
+    restart: always
+    secrets:
+      - db_root_password
+      - db_password
+      - db_user
+      - db_name
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - inception
