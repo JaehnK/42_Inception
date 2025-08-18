@@ -49,3 +49,18 @@ services:
       - db_data:/var/lib/mysql
     networks:
       - inception
+
+  wordpress:
+    container_name: wordpress
+    image: wordpress:latest
+    build: ./srcs/requirements/wordpress
+    restart: always
+    secrets:
+      - db_root_password
+      - db_password
+      - db_user
+      - db_name
+    volumes:
+      - wp_data:/var/www/html
+    networks:
+      - inception
