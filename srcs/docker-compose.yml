@@ -25,21 +25,19 @@ networks:
 
 secrets:
   db_root_password:
-    file: ./secrets/mariadb/secrets/db_root_password.txt
+    file: ./secrets/db_root_password.txt
   db_password:
-    file: ./secrets/mariadb/secrets/db_password.txt
+    file: ./secrets/db_password.txt
   db_user:
-    file: ./secrets/mariadb/secrets/db_user.txt
+    file: ./secrets/db_user.txt
   db_name:
     file: ./secrets/db_name.txt
 
 
 services:
   mariadb:
-    container_name: mariadb
     image: mariadb:latest
-    build: ./srcs/requirements/mariadb
-    restart: always
+    build: ./requirements/mariadb
     secrets:
       - db_root_password
       - db_password
@@ -51,10 +49,10 @@ services:
       - inception
 
   wordpress:
-    container_name: wordpress
     image: wordpress:latest
-    build: ./srcs/requirements/wordpress
-    restart: always
+    build: ./requirements/wordpress
+    depends_on:
+        - mariadb
     secrets:
       - db_root_password
       - db_password
@@ -62,5 +60,20 @@ services:
       - db_name
     volumes:
       - wp_data:/var/www/html
+    networks:
+      - inception
+
+  nginx:
+    image: nginx:latest
+    build: ./requirements/nginx
+    depends_on:
+      - wordpress
+    secrets:
+      - db_root_password
+      - db_password
+      - db_user
+      - db_name
+    volumes:
+      - wp_data:/
     networks:
       - inception
