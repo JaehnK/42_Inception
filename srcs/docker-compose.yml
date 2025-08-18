@@ -1,42 +1,40 @@
-version: "3.5"
+version: "3.8"
 
 volumes:
   db_data:
     name: mariadb
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./srcs/requirements/mariadb/
-  
+
   wp_data:
     name: wordpress
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ./srcs/requirements/wordpress/
 
 
 networks:
   inception:
-    driver: bridge
+    driver: overlay
+    attachable: true
 
 
 secrets:
   db_root_password:
-    file: ./secrets/db_root_password.txt
+    file: ../secrets/db_root_password.txt
   db_password:
-    file: ./secrets/db_password.txt
+    file: ../secrets/db_password.txt
   db_user:
-    file: ./secrets/db_user.txt
+    file: ../secrets/db_user.txt
   db_name:
-    file: ./secrets/db_name.txt
-
+    file: ../secrets/db_name.txt
+  wp_admin_user:     
+    file: ../secrets/wp_admin_user.txt
+  wp_admin_password:
+    file: ../secrets/wp_admin_password.txt
+  wp_admin_email:
+    file: ../secrets/wp_admin_email.txt
 
 services:
-  mariadb:
-    image: mariadb:latest
+  01_mariadb:
+    image: inception_mariadb:latest
     build: ./requirements/mariadb
     secrets:
       - db_root_password
@@ -47,24 +45,38 @@ services:
       - db_data:/var/lib/mysql
     networks:
       - inception
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager  # 특정 노드에 고정
 
-  wordpress:
-    image: wordpress:latest
+  02_wordpress:
+    image: inception_wordpress:latest
     build: ./requirements/wordpress
     depends_on:
         - mariadb
+    environment:
+      - DOMAIN_NAME=jaehukim.42.fr
+      - WP_TITLE=My WordPress Site
     secrets:
       - db_root_password
       - db_password
       - db_user
       - db_name
+      - wp_admin_user
+      - wp_admin_password
+      - wp_admin_email
     volumes:
       - wp_data:/var/www/html
     networks:
       - inception
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager  # 특정 노드에 고정
 
-  nginx:
-    image: nginx:latest
+  03_nginx:
+    image: inception_nginx:latest
     build: ./requirements/nginx
     depends_on:
       - wordpress
@@ -74,6 +86,10 @@ services:
       - db_user
       - db_name
     volumes:
-      - wp_data:/
+      - wp_data:/var/www/html 
     networks:
       - inception
+    ports:
+      - "443:443"
+      - "80:80"
+

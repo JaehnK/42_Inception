@@ -5,6 +5,9 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -out /etc/ssl/certs/jaehukim.42.fr.crt \
     -subj "/C=KR/ST=Gyeongsangbuk-do/L=Gyeongsan/O=42Gyeongsan/OU=Cadet/CN=jaehukim.42.fr"
 
+chmod 600 /etc/ssl/private/jaehukim.42.fr.key
+chmod 644 /etc/ssl/certs/jaehukim.42.fr.crt
+
 # nginx.conf 생성
 # /etc/nginx/nginx.conf /etc/nginx/fastcgi.conf 참고
 cat > /etc/nginx/nginx.conf << 'EOF'
@@ -67,9 +70,6 @@ http {
     }
 }
 EOF
-
-# nginx 설정 테스트
-nginx -t
 
 # nginx 포그라운드 실행
 nginx -g "daemon off;"
