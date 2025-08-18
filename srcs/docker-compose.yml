@@ -33,7 +33,7 @@ secrets:
     file: ../secrets/wp_admin_email.txt
 
 services:
-  01_mariadb:
+  mariadb:
     image: inception_mariadb:latest
     build: ./requirements/mariadb
     secrets:
@@ -50,11 +50,9 @@ services:
         constraints:
           - node.role == manager  # 특정 노드에 고정
 
-  02_wordpress:
+  wordpress:
     image: inception_wordpress:latest
     build: ./requirements/wordpress
-    depends_on:
-        - mariadb
     environment:
       - DOMAIN_NAME=jaehukim.42.fr
       - WP_TITLE=My WordPress Site
@@ -75,11 +73,9 @@ services:
         constraints:
           - node.role == manager  # 특정 노드에 고정
 
-  03_nginx:
+  nginx:
     image: inception_nginx:latest
     build: ./requirements/nginx
-    depends_on:
-      - wordpress
     secrets:
       - db_root_password
       - db_password

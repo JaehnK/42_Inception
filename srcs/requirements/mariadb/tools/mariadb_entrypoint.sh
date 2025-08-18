@@ -1,26 +1,26 @@
-#! /bin/bash
+#!/bin/bash
 
-service mysql start
+# 데이터 디렉토리 초기화
+if [ ! -d "/var/lib/mysql/mysql" ]; then
+    echo "Initializing MariaDB..."
+    mysql_install_db --user=mysql --datadir=/var/lib/mysql
+fi
 
-TMP_SQL="/tmp/init.sql"
-touch $TMP_SQL
-chmod 600 $TMP_SQL
-
-# Docker Secrets 파일 읽기 (/run/secrets/에서 들고오기)
+# Docker Secrets 읽기
 DB_NAME=$(cat /run/secrets/db_name)
 DB_USER=$(cat /run/secrets/db_user)
 DB_PASSWORD=$(cat /run/secrets/db_password)
 DB_ROOT_PASSWORD=$(cat /run/secrets/db_root_password)
 
-# MariaDB 초기화
-echo "CREATE DATABASE IF NOT EXISTS $DB_NAME ;" > $TMP_SQL
-echo "CREATE USER IF NOT EXISTS '$DB_USER'@'%' IDENTIFIED BY '$DB_PASSWORD' ;" >> $TMP_SQL
-echo "GRANT ALL PRIVILEGES ON $DB_NAME.* TO '$DB_USER'@'%' ;" >> $TMP_SQL
-echo "ALTER USER 'root'@'localhost' IDENTIFIED BY '$DB_ROOT_PASSWORD' ;" >> $TMP_SQL
-echo "FLUSH PRIVILEGES;" >> $TMP_SQL
 
-mysql < $TMP_SQL
-rm $TMP_SQL
+mkdir -p /docker-entrypoint-initdb.d
+cat > /docker-entrypoint-initdb.d/init.sql << EOF
+ALTER USER 'root'@'localhost' IDENTIFIED BY '$DB_ROOT_PASSWORD';
+CREATE DATABASE IF NOT EXISTS \`$DB_NAME\`;
+CREATE USER IF NOT EXISTS '$DB_USER'@'%' IDENTIFIED BY '$DB_PASSWORD';
+GRANT ALL PRIVILEGES ON \`$DB_NAME\`.* TO '$DB_USER'@'%';
+FLUSH PRIVILEGES;
+EOF
 
-service mysql stop
-mysqld_safe --user=mysql
+# --init-file 옵션으로 초기화 스크립트 실행
+exec mysqld_safe --user=mysql --init-file=/docker-entrypoint-initdb.d/init.sql

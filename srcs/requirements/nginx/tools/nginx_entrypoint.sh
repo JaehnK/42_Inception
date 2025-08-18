@@ -36,6 +36,8 @@ http {
     
     server {
         listen 443 ssl http2;
+        listen [::]:443 http2 ssl;
+
         server_name jaehukim.42.fr;
         root /var/www/html;
         index index.php index.html index.htm;
@@ -44,18 +46,18 @@ http {
         ssl_certificate /etc/ssl/certs/jaehukim.42.fr.crt;
         ssl_certificate_key /etc/ssl/private/jaehukim.42.fr.key;
         ssl_protocols TLSv1.2 TLSv1.3;
-        ssl_prefer_server_ciphers on;
 
-        # 보안 헤더
-        add_header X-Frame-Options "SAMEORIGIN" always;
-        add_header X-XSS-Protection "1; mode=block" always;
-        add_header X-Content-Type-Options "nosniff" always;
 
         location / {
             try_files $uri $uri/ /index.php?$args;
         }
 
         location ~ \.php$ {
+            if (!-f $document_root$fastcgi_script_name)
+            { 
+                return 404;
+            }
+            try_files $uri =404;
             include fastcgi_params;
             fastcgi_pass wordpress:9000;
             fastcgi_index index.php;
