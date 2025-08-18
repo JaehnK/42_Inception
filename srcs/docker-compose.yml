@@ -3,52 +3,35 @@ version: "3.8"
 volumes:
   db_data:
     name: mariadb
-    driver: local
-
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/jaehun/data/mariadb
   wp_data:
     name: wordpress
-    driver: local
-
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/jaehun/data/wordpress
 
 networks:
   inception:
-    driver: overlay
-    attachable: true
-
-
-secrets:
-  db_root_password:
-    file: ../secrets/db_root_password.txt
-  db_password:
-    file: ../secrets/db_password.txt
-  db_user:
-    file: ../secrets/db_user.txt
-  db_name:
-    file: ../secrets/db_name.txt
-  wp_admin_user:     
-    file: ../secrets/wp_admin_user.txt
-  wp_admin_password:
-    file: ../secrets/wp_admin_password.txt
-  wp_admin_email:
-    file: ../secrets/wp_admin_email.txt
+    driver: bridge
 
 services:
   mariadb:
     image: inception_mariadb:latest
     build: ./requirements/mariadb
-    secrets:
-      - db_root_password
-      - db_password
-      - db_user
-      - db_name
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_DATABASE=${DB_NAME}
     volumes:
       - db_data:/var/lib/mysql
     networks:
       - inception
-    deploy:
-      placement:
-        constraints:
-          - node.role == manager  # 특정 노드에 고정
+    restart: unless-stopped
 
   wordpress:
     image: inception_wordpress:latest
@@ -56,36 +39,36 @@ services:
     environment:
       - DOMAIN_NAME=jaehukim.42.fr
       - WP_TITLE=My WordPress Site
-    secrets:
-      - db_root_password
-      - db_password
-      - db_user
-      - db_name
-      - wp_admin_user
-      - wp_admin_password
-      - wp_admin_email
+      - DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_USER=${DB_USER}
+      - DB_NAME=${DB_NAME}
+      - WP_ADMIN_USER=${WP_ADMIN_USER}
+      - WP_ADMIN_PASSWORD=${WP_ADMIN_PASSWORD}
+      - WP_ADMIN_EMAIL=${WP_ADMIN_EMAIL}
     volumes:
       - wp_data:/var/www/html
     networks:
       - inception
-    deploy:
-      placement:
-        constraints:
-          - node.role == manager  # 특정 노드에 고정
+    depends_on:
+      - mariadb
+    restart: unless-stopped
 
   nginx:
     image: inception_nginx:latest
     build: ./requirements/nginx
-    secrets:
-      - db_root_password
-      - db_password
-      - db_user
-      - db_name
+    environment:
+      - DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_USER=${DB_USER}
+      - DB_NAME=${DB_NAME}
     volumes:
-      - wp_data:/var/www/html 
+      - wp_data:/var/www/html
     networks:
       - inception
     ports:
       - "443:443"
       - "80:80"
-
+    depends_on:
+      - wordpress
+    restart: unless-stopped
