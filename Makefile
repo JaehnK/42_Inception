@@ -1,4 +1,7 @@
 up:
+	@echo "Creating necessary directories..."
+	@mkdir -p /home/jaehun/data/mariadb /home/jaehun/data/wordpress
+	@sudo chown $(USER):$(USER) /home/jaehun/data/mariadb /home/jaehun/data/wordpress
 	@echo "Building images..."
 	@cd ./srcs && docker compose build
 	@echo "Starting services..."
@@ -15,6 +18,7 @@ clean:
 	@cd ./srcs && docker compose down -v --rmi all 2>/dev/null || true
 	@docker system prune -af
 	@docker volume prune -f
+	@sudo rm -rf /home/jaehun/data/mariadb/* /home/jaehun/data/wordpress/* 2>/dev/null || true
 	@echo "Cleanup completed."
 
 restart:

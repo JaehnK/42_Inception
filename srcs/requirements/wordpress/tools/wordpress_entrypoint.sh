@@ -25,6 +25,9 @@ if [ ! -f /var/www/html/wp-config.php ]; then
 define('WP_ALLOW_REPAIR', true);
 define('WP_DEBUG', true);
 
+// 댓글 관리자 승인 없이 게시
+define('WP_COMMENT_MODERATION', 0);
+
 // SSL/HTTPS 설정
 if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
     $_SERVER['HTTPS'] = 'on';
@@ -84,4 +87,4 @@ find /var/www/html -type d -exec chmod 755 {} \;
 find /var/www/html -type f -exec chmod 644 {} \;
 
 echo "Starting PHP-FPM..."
-php-fpm8.4 --nodaemonize
+exec php-fpm8.4 --nodaemonize

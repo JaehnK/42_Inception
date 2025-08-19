@@ -23,6 +23,7 @@ networks:
 
 services:
   mariadb:
+    container_name: mariadb
     image: inception_mariadb:latest
     build: ./requirements/mariadb
     environment:
@@ -37,6 +38,7 @@ services:
     restart: unless-stopped
 
   wordpress:
+    container_name: wordpress
     image: inception_wordpress:latest
     build: ./requirements/wordpress
     environment:
