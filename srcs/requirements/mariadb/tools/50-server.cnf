@@ -12,11 +12,13 @@
 # * Basic Settings
 #
 
+
+
 # [42_inception]: user 옵션 활성화
 # root가 아닌 mysql이라는 사용자로 실행함
 user                    = mysql
-pid-file                = /run/mysqld/mysqld.pid
 basedir                 = /usr
+
 
 # [42_inception]: datadir 지시어를 활성화하여 데이터베이스 파일이 저장될 위치를 명시함
 # Docker와 마운트를 위해 필수적임
@@ -128,11 +130,7 @@ collation-server      = utf8mb4_general_ci
 # use this group for options that older servers don't understand
 [mariadb-10.11]
 
-# [42_inception]: socket 지시어 추가
-# Unix 소켓 파일 경로 명시함으로써 mysql 클라이언트 도구들이 소켓으로 연결 시 사용
-socket = /run/mysqld/mysqld.sock
+[client]
+port                    = 3306
 
-# [42_inception]: port 지시어 추가
-# docker port와 일치시키기 위해 해당 포트를 명시적으로 지정함
-port = 3306
 

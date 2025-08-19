@@ -1,14 +1,16 @@
-version: "3.8"
 
 volumes:
   db_data:
     name: mariadb
+    driver: local
     driver_opts:
       type: none
       o: bind
       device: /home/jaehun/data/mariadb
+  
   wp_data:
     name: wordpress
+    driver: local
     driver_opts:
       type: none
       o: bind
@@ -16,6 +18,7 @@ volumes:
 
 networks:
   inception:
+    name: inception
     driver: bridge
 
 services:
@@ -23,10 +26,10 @@ services:
     image: inception_mariadb:latest
     build: ./requirements/mariadb
     environment:
-      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
-      - MYSQL_PASSWORD=${DB_PASSWORD}
-      - MYSQL_USER=${DB_USER}
-      - MYSQL_DATABASE=${DB_NAME}
+      - DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_USER=${DB_USER}
+      - DB_NAME=${DB_NAME}
     volumes:
       - db_data:/var/lib/mysql
     networks:
@@ -39,6 +42,7 @@ services:
     environment:
       - DOMAIN_NAME=jaehukim.42.fr
       - WP_TITLE=My WordPress Site
+      - DB_HOST=${DB_HOST}
       - DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_USER=${DB_USER}
@@ -52,9 +56,10 @@ services:
       - inception
     depends_on:
       - mariadb
-    restart: unless-stopped
+    restart: always
 
   nginx:
+    container_name: nginx
     image: inception_nginx:latest
     build: ./requirements/nginx
     environment:
@@ -68,7 +73,6 @@ services:
       - inception
     ports:
       - "443:443"
-      - "80:80"
     depends_on:
       - wordpress
     restart: unless-stopped

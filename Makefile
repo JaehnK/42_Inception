@@ -1,24 +1,38 @@
 up:
-	@echo "Initializing Docker Swarm..."
-	@docker swarm init --advertise-addr $$(ip route get 8.8.8.8 | awk '{print $$7; exit}') 2>/dev/null || docker swarm init
 	@echo "Building images..."
 	@cd ./srcs && docker compose build
-	@echo "Deploying stack..."
-	@cd ./srcs && docker stack deploy -c docker-compose.yml inception
-	@echo "Ensuring proper startup order..."
-	@docker service scale inception_nginx=0 inception_wordpress=0 2>/dev/null || true
-	@sleep 5
-	@docker service scale inception_wordpress=1 
-	@sleep 15
-	@docker service scale inception_nginx=1
-	
+	@echo "Starting services..."
+	@cd ./srcs && docker compose up -d
+	@echo "Services started successfully!"
+
 down:
-	@docker stack rm inception || true
-	@docker swarm leave --force 2>/dev/null || true
+	@echo "Stopping services..."
+	@cd ./srcs && docker compose down
+	@echo "Services stopped."
+
 clean:
-	@docker stack rm inception 2>/dev/null || true
-	@docker swarm leave --force 2>/dev/null || true
+	@echo "Stopping and removing all containers, networks, and images..."
+	@cd ./srcs && docker compose down -v --rmi all 2>/dev/null || true
 	@docker system prune -af
 	@docker volume prune -f
+	@echo "Cleanup completed."
 
-.PHONY: up down clean
+restart:
+	@echo "Restarting services..."
+	@cd ./srcs && docker compose restart
+	@echo "Services restarted."
+
+logs:
+	@cd ./srcs && docker compose logs -f
+
+status:
+	@cd ./srcs && docker compose ps
+
+rebuild:
+	@echo "Rebuilding and restarting services..."
+	@cd ./srcs && docker compose down
+	@cd ./srcs && docker compose build --no-cache
+	@cd ./srcs && docker compose up -d
+	@echo "Rebuild completed."
+
+.PHONY: up down clean restart logs status rebuild

@@ -35,8 +35,9 @@ http {
     access_log /var/log/nginx/access.log;
     
     server {
-        listen 443 ssl http2;
-        listen [::]:443 http2 ssl;
+        listen 443 ssl;
+        listen [::]:443 ssl;
+        http2 on;
 
         server_name jaehukim.42.fr;
         root /var/www/html;
@@ -74,4 +75,4 @@ http {
 EOF
 
 # nginx 포그라운드 실행
-nginx -g "daemon off;"
+exec nginx -g "daemon off;"

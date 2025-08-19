@@ -1,26 +1,40 @@
 #!/bin/bash
 
-# 데이터 디렉토리 초기화
+# 데이터베이스 초기화
 if [ ! -d "/var/lib/mysql/mysql" ]; then
-    echo "Initializing MariaDB..."
+    echo "Initializing MariaDB database..."
     mysql_install_db --user=mysql --datadir=/var/lib/mysql
 fi
 
-# Docker Secrets 읽기
-DB_NAME=$(cat /run/secrets/db_name)
-DB_USER=$(cat /run/secrets/db_user)
-DB_PASSWORD=$(cat /run/secrets/db_password)
-DB_ROOT_PASSWORD=$(cat /run/secrets/db_root_password)
-
-
-mkdir -p /docker-entrypoint-initdb.d
-cat > /docker-entrypoint-initdb.d/init.sql << EOF
+# 임시 init 파일 생성
+INIT_FILE="/tmp/init.sql"
+cat > "$INIT_FILE" << EOF
+-- Root 비밀번호 설정
 ALTER USER 'root'@'localhost' IDENTIFIED BY '$DB_ROOT_PASSWORD';
+
+-- WordPress 데이터베이스 생성
 CREATE DATABASE IF NOT EXISTS \`$DB_NAME\`;
+
+-- WordPress 사용자 생성 및 권한 부여
 CREATE USER IF NOT EXISTS '$DB_USER'@'%' IDENTIFIED BY '$DB_PASSWORD';
 GRANT ALL PRIVILEGES ON \`$DB_NAME\`.* TO '$DB_USER'@'%';
+
+-- Docker 네트워크에서의 연결을 위한 추가 권한
+CREATE USER IF NOT EXISTS '$DB_USER'@'%.inception' IDENTIFIED BY '$DB_PASSWORD';
+GRANT ALL PRIVILEGES ON \`$DB_NAME\`.* TO '$DB_USER'@'%.inception';
+
+-- 권한 적용
 FLUSH PRIVILEGES;
 EOF
 
-# --init-file 옵션으로 초기화 스크립트 실행
-exec mysqld_safe --user=mysql --init-file=/docker-entrypoint-initdb.d/init.sql
+# 임시 파일 권한 설정
+chown mysql:mysql "$INIT_FILE"
+chmod 644 "$INIT_FILE"
+
+echo "Starting MariaDB with initialization script..."
+
+# 초기화 완료 후 임시 파일 삭제를 위한 트랩 설정
+trap 'rm -f "$INIT_FILE"' EXIT
+
+# 포그라운드에서 MariaDB 실행
+exec mysqld --user=mysql --init-file="$INIT_FILE"
