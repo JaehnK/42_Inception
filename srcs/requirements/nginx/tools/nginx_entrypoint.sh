@@ -37,7 +37,6 @@ http {
     server {
         listen 443 ssl;
         listen [::]:443 ssl;
-        http2 on;
 
         server_name jaehukim.42.fr;
         root /var/www/html;

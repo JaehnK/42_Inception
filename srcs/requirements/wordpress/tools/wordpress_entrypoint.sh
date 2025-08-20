@@ -21,7 +21,6 @@ if [ ! -f /var/www/html/wp-config.php ]; then
         --extra-php \
         --allow-root \
         --skip-check << 'EOF'
-
 define('WP_ALLOW_REPAIR', true);
 define('WP_DEBUG', true);
 
@@ -52,7 +51,7 @@ EOF
 
     echo "Generating security keys..."
     wp config shuffle-salts --allow-root
-
+    
     echo "Installing WordPress..."
     wp core install \
         --url="https://jaehukim.42.fr" \
@@ -87,4 +86,4 @@ find /var/www/html -type d -exec chmod 755 {} \;
 find /var/www/html -type f -exec chmod 644 {} \;
 
 echo "Starting PHP-FPM..."
-exec php-fpm8.4 --nodaemonize
+exec php-fpm8.2 --nodaemonize
